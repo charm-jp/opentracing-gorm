@@ -36,7 +36,7 @@ func SetSpanToGorm(c opentracing.Span, db *gorm.DB) *gorm.DB {
 
 // AddGormCallbacks adds callbacks for tracing, you should call SetSpanToGorm to make them work
 func AddGormCallbacks(db *gorm.DB, name string) {
-	db.Set(spanName, name)
+	db = db.Set(spanName, name)
 
 	callbacks := newCallbacks()
 	registerCallbacks(db, "create", callbacks)

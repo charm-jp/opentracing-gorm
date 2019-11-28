@@ -6,8 +6,6 @@ replace gitlab.dev.charm.internal/charm/charmtypes => ../../../gitlab.dev.charm.
 
 require (
 	github.com/charm-jp/gorm v1.9.11-0.20191030065704-d7228af7fa56
-	github.com/jinzhu/gorm v1.9.11 // indirect
-	github.com/kr/pretty v0.1.0 // indirect
 	github.com/opentracing/opentracing-go v1.1.0
 	gitlab.dev.charm.internal/charm/charmtypes v0.0.0-20191006092644-492a88aefc88
 )
