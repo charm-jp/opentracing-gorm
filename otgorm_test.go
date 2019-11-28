@@ -4,11 +4,11 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/sqlite"
+	"github.com/charm-jp/gorm"
+	_ "github.com/charm-jp/gorm/dialects/sqlite"
+	otgorm "github.com/charm-jp/opentracing-gorm"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/mocktracer"
-	otgorm "github.com/smacker/opentracing-gorm"
 )
 
 var tracer *mocktracer.MockTracer
@@ -32,7 +32,7 @@ func initDB() *gorm.DB {
 	}
 	db.AutoMigrate(&Product{})
 	db.Create(&Product{Code: "L1212"})
-	otgorm.AddGormCallbacks(db)
+	otgorm.AddGormCallbacks(db, "test")
 	return db
 }
 
@@ -40,7 +40,7 @@ func Handler(ctx context.Context) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "handler")
 	defer span.Finish()
 
-	db := otgorm.SetSpanToGorm(ctx, gDB)
+	db := otgorm.SetSpanToGorm(span, gDB)
 
 	var product Product
 	db.First(&product, 1)

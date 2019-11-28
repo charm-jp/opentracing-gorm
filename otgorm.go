@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jinzhu/gorm"
+	"github.com/charm-jp/gorm"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 )
@@ -13,10 +13,11 @@ import (
 const (
 	parentSpanGormKey = "opentracingParentSpan"
 	spanGormKey       = "opentracingSpan"
+	spanName          = "spanName"
 )
 
 // SetSpanToGorm sets span to gorm settings, returns cloned DB
-func SetSpanToGorm(ctx context.Context, db *gorm.DB) *gorm.DB {
+func SetCtxToGorm(ctx context.Context, db *gorm.DB) *gorm.DB {
 	if ctx == nil {
 		return db
 	}
@@ -24,11 +25,19 @@ func SetSpanToGorm(ctx context.Context, db *gorm.DB) *gorm.DB {
 	if parentSpan == nil {
 		return db
 	}
+
 	return db.Set(parentSpanGormKey, parentSpan)
 }
 
+// SetSpanToGorm sets span to gorm settings, returns cloned DB
+func SetSpanToGorm(c opentracing.Span, db *gorm.DB) *gorm.DB {
+	return db.Set(parentSpanGormKey, c)
+}
+
 // AddGormCallbacks adds callbacks for tracing, you should call SetSpanToGorm to make them work
-func AddGormCallbacks(db *gorm.DB) {
+func AddGormCallbacks(db *gorm.DB, name string) {
+	db.Set(spanName, name)
+
 	callbacks := newCallbacks()
 	registerCallbacks(db, "create", callbacks)
 	registerCallbacks(db, "query", callbacks)
@@ -59,9 +68,15 @@ func (c *callbacks) before(scope *gorm.Scope) {
 	if !ok {
 		return
 	}
+
+	name, ok := scope.Get(spanName)
+	if !ok {
+		return
+	}
+
 	parentSpan := val.(opentracing.Span)
 	tr := parentSpan.Tracer()
-	sp := tr.StartSpan("sql", opentracing.ChildOf(parentSpan.Context()))
+	sp := tr.StartSpan(name.(string), opentracing.ChildOf(parentSpan.Context()))
 	ext.DBType.Set(sp, "sql")
 	scope.Set(spanGormKey, sp)
 }
